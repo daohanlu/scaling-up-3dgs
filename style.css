@@ -3,8 +3,8 @@ html { scroll-behavior: smooth; }
 
 /* Base styles */
 .header-container {
-  background-color: #314d24; /* Dark teal background */
-  color: #bee365;
+  background-color: #FCF5E8; /* Reddish-pink background */
+  color: #1d5d8f;  /* Dark teal text */
   text-align: center; /* Center content on small screens */
   padding: 20px; /* Reduced padding for small screens */
 }
@@ -35,9 +35,9 @@ html { scroll-behavior: smooth; }
 }
 
 .button-container a.button {
-  background-color: #F2D3B4; /* Yellow background */
-  color: #000; /* Black text */
-  border: 2px solid #ffc107; /* Orange border */
+  background-color: #b7e7f7; /* Yellow background */
+  color: #1d5d8f; /* Black text */
+  border: 2px solid #1d5d8f; /* Orange border */
   border-radius: 25px; /* Rounded borders */
   padding: 10px 20px; /* Top and bottom padding, left and right padding */
   margin: 5px; /* Space between the buttons */
@@ -48,8 +48,8 @@ html { scroll-behavior: smooth; }
 }
 
 .button-container a.button:hover {
-  background-color: #EAB682; /* Darker yellow background on hover */
-  color: #555; /* White text on hover */
+  background-color: #62c8ec; /* Darker yellow background on hover */
+  color: #1d5d8f; /* White text on hover */
 }
 
 /* Styles for larger screens using a media query */
