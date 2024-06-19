@@ -82,23 +82,26 @@
         <div class="byline-container">
             <div class="byline-column">
                 <h3>Date</h3>
-                <p>XXX. yy, 2024</p>
+                <p>06/19/2024</p>
             </div>
         </div>
     </div>
     <p>
         We present Grendel, a distributed training system, to partition 3D Gaussian Splatting (3D GS) parameters and parallelize its
-        computation across multiple GPUs. We explore different learning rate scaling strategies and identify the simple
-        <i>√(batch_size)</i> scaling rule to be highly effective. Using Grendel, we show that scaling up 3D GS training
-        in terms of parameters and compute leads to significant improvements in visual quality on multiple large-scale
-        scene reconstruction datasets.
+        computation across multiple GPUs. To optimize batched training, we explore different optimization hyperparameter
+        scaling strategies and identify the simple <i>√(batch_size)</i> scaling rule to be highly effective.
+        Using Grendel, we show that scaling up 3D GS training in terms of parameters and compute leads to significant
+        improvements in visual quality on multiple large-scale scene reconstruction datasets.
     </p>
     <section id="showcase">
         <h2>Videos Showcase</h2>
         <p><i>Please select the highest YouTube quality for best viewing experience</i></p>
         <h3>MegaNeRF Rubble (4K)</h3>
         <p style="text-align: center">
-            <iframe width="560" height="315" src="https://www.youtube.com/embed/3CksDBBrnMY?si=6xx2u0GpaCzXNqew" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/WaYfY3GTs6U?si=hctLtB2xqU9_L90I" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </p>
+        <p style="text-align: center">
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/-5PPSQEJj_w?si=eNrb-vpzdj-UxFub" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </p>
         <h3>MatrixCity (1080p)</h3>
         <p style="text-align: center">
@@ -130,12 +133,28 @@
     </section>
     <section id="grendel">
         <h2>Grendel System Design</h2>
+        <p>
+            We design Grendel to leverage the inherent mixed parallelism of 3DGS. For tasks exhibiting Gaussian-wise parallelism,
+            such as projection, color computation, and parameter storage, Grendel distributes Gaussians across GPUs.
+            For pixel-wise rendering and loss computation, pixels are distributed across GPUs. Grendel then uses sparse
+            all-to-all communication to transfer Gaussians to their designated GPUs by exploiting spatial locality.
+            Additionally, Grendel employs a dynamic load balancer that utilizes observations from previous training
+            iterations to partition images, aiming to minimize workload imbalance.
+        </p>
+        <d-figure>
+            <figure>
+                <img src="static/grendel-system-design.png" style="display: block; margin-left: auto; margin-right: auto; width: 100%;" alt="density interpolation">
+                <figcaption><b>Grendel System Design. </b> (left) conventional 3DGS training using a single GPU. (right) Our Grendel system distributes 3D Gaussians across multiple GPUs to alleviate the GPU
+                    memory bottleneck. We partition rendering in both the pixel and batch dimensions to achieve optimal speedup.
+                </figcaption>
+            </figure>
+        </d-figure>
     </section>
     <section id="hyperparameter-scaling">
         <h2>Hyperparameter Scaling for Batched Training</h2>
         <p>
             To efficiently scale to many GPUs, Grendel increases the batch size beyond one so it can partition training into a batch of images and into pixels inside each image.
-            However, increasing the batch size without hyperparameter tuning can lead to unstable and inefficient training[3] [24], and hyperparameter tuning is a time-consuming and tedious process.
+            However, increasing the batch size without tuning optimization hyperparameters can lead to unstable and inefficient training[3] [24], yet hyperparameter tuning is itself a time-consuming and tedious process.
             Driven by a heuristic <i>Independent Gradients Hypothesis</i> for 3D GS training, we propose to scale Adam’s learning rate and momentum coefficients with a square-root and exponential rule:
         </p>
         <h3 style="text-align: center">
@@ -147,14 +166,14 @@
         <p>
             Assuming the gradients from different images in a batch are independent, we want a batched update step to
             equal the sum of individual images' updates. Thus, we scale the learning rate to "undo" the Adam optimizer's
-            second moment normalization and the momentum coefficient to keep the effective momentum per image similar.
+            second moment normalization and scale the momentum coefficient to keep the effective per-image momentum similar.
             Our learning rate and momentum scaling rules together enable
-            hyperparameter-tuning-free training by keeping the weight updates similar to batch-size-one (BS 1) training
-            when using larger batch sizes. In experiments below, we first train a 3D GS model on the Rubble scene to
-            iteration 15,000, then reset the Adam optimizer states and continue training with different batch sizes.
+            hyperparameter-tuning-free training by making the training trajectory approximately invariant to the batch size.
+            In experiments below, we first train a 3D GS model on the Rubble scene to
+            iteration 15,000, then reset the Adam and continue training with different batch sizes.
             Since different parameter groups of 3D GS have vastly different magnitudes, we focus on one
             specific group, namely the diffuse color, to make the comparisons meaningful.
-            Our proposed scaling rules maintain high cosine similarity and approximately equal magnitudes
+            We discover that our proposed scaling rules maintain high cosine similarity and approximately equal magnitudes
             regardless of batch size:
         </p>
         <d-figure>
